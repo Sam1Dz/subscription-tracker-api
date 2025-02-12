@@ -4,7 +4,7 @@ import tslint from 'typescript-eslint';
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
-  { files: ['**/*.{js,mjs,cjs,ts}'] },
+  { files: ['src/**/*.{js,mjs,cjs,ts}'] },
   { languageOptions: { globals: globals.node } },
   pluginJs.configs.recommended,
   ...tslint.configs.recommended,
@@ -13,5 +13,8 @@ export default [
     rules: {
       '@typescript-eslint/no-unused-vars': 'warn',
     },
+  },
+  {
+    ignores: ['dist/*', 'node_modules/*'],
   },
 ];
