@@ -1,7 +1,7 @@
 {
   "name": "subscription-tracker-api",
   "description": "Learning how to make Subscription Management Backend System with JWT authentication, database modeling, API architecture, security, automated workflows, and more.",
-  "version": "0.0.0-dev.1",
+  "version": "0.0.0-dev.2",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Sam1Dz/subscription-tracker-api.git"
@@ -21,7 +21,10 @@
     "node": ">=20"
   },
   "dependencies": {
+    "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "mongodb": "^6.13.0",
+    "mongoose": "^8.10.0",
     "nodemon": "^3.1.9",
     "ts-node": "^10.9.2"
   },
