@@ -1,6 +1,11 @@
 import Express from 'express';
+import CookieParser from 'cookie-parser';
+
 import ConnectDB from './database';
 import { BASE_URL, PORT } from './config/env';
+
+/* MIDDLEWARE */
+import ErrorMiddleware from './middlewares/error.middleware';
 
 /* ROUTES */
 import AuthRouter from './routes/auth.route';
@@ -8,6 +13,11 @@ import UserRouter from './routes/user.route';
 import SubscriptionRouter from './routes/subscription.route';
 
 const App = Express();
+
+App.use(Express.json());
+App.use(Express.urlencoded({ extended: false }));
+App.use(CookieParser());
+App.use(ErrorMiddleware);
 
 App.get('/', (_, res) => {
   res.send('Welcome to the Subscription Tracker API!');
