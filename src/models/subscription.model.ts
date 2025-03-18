@@ -1,9 +1,10 @@
+import DateFNS from 'date-fns';
 import Mongoose from 'mongoose';
 
 /* TYPES */
-import type { ISubscription } from '../types/subscription';
+import { ISubscriptionDocument } from '../types/subscription';
 
-const SubscriptionSchema = new Mongoose.Schema<ISubscription>(
+const SubscriptionSchema = new Mongoose.Schema<ISubscriptionDocument>(
   {
     name: {
       type: String,
@@ -79,19 +80,17 @@ const SubscriptionSchema = new Mongoose.Schema<ISubscription>(
 );
 
 // Auto-calculate renewal date if missing.
-SubscriptionSchema.pre('save', function (next) {
+SubscriptionSchema.pre('save', function (this: ISubscriptionDocument, next) {
   if (!this.renewalDate) {
-    const renewalPeriods = {
-      daily: 1,
-      weekly: 7,
-      monthly: 30,
-      yearly: 365,
-    };
-
-    this.renewalDate = new Date(this.startDate);
-    this.renewalDate.setDate(
-      this.renewalDate.getDate() + renewalPeriods[this.frequency],
-    );
+    const start = new Date(this.startDate);
+    this.renewalDate =
+      this.frequency === 'daily'
+        ? DateFNS.addDays(start, 1)
+        : this.frequency === 'weekly'
+          ? DateFNS.addWeeks(start, 1)
+          : this.frequency === 'monthly'
+            ? DateFNS.addMonths(start, 1)
+            : DateFNS.addYears(start, 1);
   }
 
   // Auto-update the status if renewal date has passed
@@ -101,3 +100,5 @@ SubscriptionSchema.pre('save', function (next) {
 
   next();
 });
+
+export default Mongoose.model('Subscription', SubscriptionSchema);

@@ -1,76 +1,57 @@
-import { Error as MongooseError } from 'mongoose';
+/* UTILITIES */
+import ApiError from '../utils/ApiError';
 
 /* TYPES */
+import type { MongoError } from 'mongodb';
+import type { Error as MongooseError } from 'mongoose';
 import type { Request, Response, NextFunction } from 'express';
 
 interface CustomError extends Error {
   statusCode?: number;
+  code?: number;
+  errors?: Record<string, { message: string }>;
 }
+type AppError =
+  | ApiError
+  | CustomError
+  | MongoError
+  | MongooseError.ValidationError;
 
-const ErrorMiddleware = (
-  err: CustomError | MongooseError,
-  req: Request,
+const errorMiddleware = (
+  err: AppError,
+  _: Request,
   res: Response,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   next: NextFunction,
 ) => {
-  try {
-    let error = { ...err } as CustomError;
-    error.message = err.message;
+  console.error(err);
 
-    console.error(err);
+  let statusCode = 500;
+  let message = 'Server Error';
 
-    if (err instanceof MongooseError.CastError) {
-      const message = 'Resource not found';
-      error = new Error(message) as CustomError;
-      error.statusCode = 404;
-    }
-
-    if (err instanceof MongooseError.ValidationError) {
-      const message = Object.values(err.errors)
-        .map((val) => val.message)
-        .join(', ');
-      error = new Error(message) as CustomError;
-      error.statusCode = 400;
-    }
-
-    if (err instanceof MongooseError.DocumentNotFoundError) {
-      const message = 'Resource not found';
-      error = new Error(message) as CustomError;
-      error.statusCode = 404; // Or 204 No Content
-    }
-
-    if (err instanceof MongooseError.MissingSchemaError) {
-      const message = 'Schema is missing for the model';
-      error = new Error(message) as CustomError;
-      error.statusCode = 500;
-    }
-
-    if (err instanceof MongooseError.OverwriteModelError) {
-      const message = 'Model with that name already exists';
-      error = new Error(message) as CustomError;
-      error.statusCode = 500;
-    }
-
-    if (err.name === 'MongoServerError') {
-      if (err.message.includes('E11000')) {
-        const message = 'Duplicate field value entered';
-        error = new Error(message) as CustomError;
-        error.statusCode = 400;
-      } else {
-        const message = `Database error: ${err.message}`;
-        error = new Error(message) as CustomError;
-        error.statusCode = 500;
-
-        console.error('MongoServerError details:', err);
-      }
-    }
-
-    res
-      .status(error.statusCode || 500)
-      .json({ success: false, error: error.message || 'Server Error' });
-  } catch (error) {
-    next(error);
+  if (err instanceof ApiError) {
+    statusCode = err.statusCode;
+    message = err.message;
+  } else if (err.name === 'CastError') {
+    statusCode = 404;
+    message = 'Resource not found';
+  } else if ('code' in err && err.code === 11000) {
+    statusCode = 400;
+    message = 'Duplicate field value entered';
+  } else if (err.name === 'ValidationError' && 'errors' in err && err.errors) {
+    statusCode = 400;
+    message = Object.values(err.errors)
+      .map((val) => val.message)
+      .join(', ');
+  } else if (err.message) {
+    message = err.message;
   }
+
+  res.status(statusCode).json({
+    success: false,
+    error: message,
+    ...(process.env.npm_lifecycle_event === 'dev' && { stack: err.stack }),
+  });
 };
 
-export default ErrorMiddleware;
+export default errorMiddleware;

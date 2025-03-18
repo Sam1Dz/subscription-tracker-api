@@ -1,8 +1,7 @@
 /* TYPES */
-import type { Types } from 'mongoose';
+import type { Types, Document } from 'mongoose';
 
 type SubscriptionCurrency = 'IDR' | 'SGD' | 'USD';
-type SubscriptionFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
 type SubscriptionCategory =
   | 'sports'
   | 'news'
@@ -13,6 +12,7 @@ type SubscriptionCategory =
   | 'politics'
   | 'other';
 type SubscriptionStatus = 'active' | 'cancelled' | 'expired';
+export type SubscriptionFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export interface ISubscription {
   name: string;
@@ -26,3 +26,4 @@ export interface ISubscription {
   status: SubscriptionStatus;
   renewalDate?: NativeDate;
 }
+export type ISubscriptionDocument = ISubscription & Document;

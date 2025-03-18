@@ -1,36 +1,55 @@
 import Express from 'express';
 import CookieParser from 'cookie-parser';
 
-import ConnectDB from './database';
+import connectDB from './database';
 import { BASE_URL, PORT } from './config/env';
 
-/* MIDDLEWARE */
-import ErrorMiddleware from './middlewares/error.middleware';
-
 /* ROUTES */
-import AuthRouter from './routes/auth.route';
-import UserRouter from './routes/user.route';
-import SubscriptionRouter from './routes/subscription.route';
+import authRouter from './routes/auth.route';
+import userRouter from './routes/user.route';
+import subscriptionRouter from './routes/subscription.route';
 
-const App = Express();
+/* MIDDLEWARE */
+import errorMiddleware from './middlewares/error.middleware';
 
-App.use(Express.json());
-App.use(Express.urlencoded({ extended: false }));
-App.use(CookieParser());
-App.use(ErrorMiddleware);
+/* UTILITIES */
+import ApiError from './utils/ApiError';
 
-App.get('/', (_, res) => {
+/* TYPES */
+import type { Request, Response, NextFunction } from 'express';
+
+const app = Express();
+
+app.use(Express.json());
+app.use(Express.urlencoded({ extended: false }));
+app.use(CookieParser());
+
+app.get('/', (_: Request, res: Response) => {
   res.send('Welcome to the Subscription Tracker API!');
 });
 
-App.use(`${BASE_URL}/auth`, AuthRouter);
-App.use(`${BASE_URL}/users`, UserRouter);
-App.use(`${BASE_URL}/subscription`, SubscriptionRouter);
+app.use(`${BASE_URL}/auth`, authRouter);
+app.use(`${BASE_URL}/users`, userRouter);
+app.use(`${BASE_URL}/subscription`, subscriptionRouter);
 
-App.listen(PORT, async () => {
-  console.info(
-    `Subscription Tracker API is running on http://localhost:${PORT}`,
-  );
-
-  await ConnectDB();
+app.use((req: Request, _: Response, next: NextFunction) => {
+  return next(new ApiError(404, `Route not found: ${req.originalUrl}`));
 });
+
+app.use(errorMiddleware);
+
+const StartServer = async () => {
+  try {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.info(
+        `Subscription Tracker API is running on http://localhost:${PORT}`,
+      );
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+StartServer();
