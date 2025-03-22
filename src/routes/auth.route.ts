@@ -1,17 +1,17 @@
 import { Router } from 'express';
 
-const AuthRouter = Router();
+/* CONTROLLERS */
+import { signIn, signUp } from '../controllers/auth.controller';
 
-AuthRouter.post('/sign-up', (_, res) => {
-  res.send({ title: 'Sign up' });
-});
+/* LIBRARIES */
+import validate, {
+  signInValidation,
+  signUpValidation,
+} from '../libs/validation';
 
-AuthRouter.post('/sign-in', (_, res) => {
-  res.send({ title: 'Sign in' });
-});
+const authRouter = Router();
 
-AuthRouter.post('/sign-out', (_, res) => {
-  res.send({ title: 'Sign out' });
-});
+authRouter.post('/sign-up', signUpValidation, validate, signUp);
+authRouter.post('/sign-in', signInValidation, validate, signIn);
 
-export default AuthRouter;
+export default authRouter;

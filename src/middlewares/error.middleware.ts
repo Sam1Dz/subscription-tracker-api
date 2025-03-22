@@ -28,10 +28,13 @@ const errorMiddleware = (
 
   let statusCode = 500;
   let message = 'Server Error';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let data: any;
 
   if (err instanceof ApiError) {
     statusCode = err.statusCode;
     message = err.message;
+    data = 'data' in err ? err.data : undefined;
   } else if (err.name === 'CastError') {
     statusCode = 404;
     message = 'Resource not found';
@@ -50,6 +53,7 @@ const errorMiddleware = (
   res.status(statusCode).json({
     success: false,
     error: message,
+    ...(data && { data }),
     ...(process.env.npm_lifecycle_event === 'dev' && { stack: err.stack }),
   });
 };

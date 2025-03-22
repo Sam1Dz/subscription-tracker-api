@@ -1,8 +1,10 @@
 import Express from 'express';
 import CookieParser from 'cookie-parser';
+import Mongoose from 'mongoose';
+import Http from 'http';
 
 import connectDB from './database';
-import { BASE_URL, PORT } from './config/env';
+import { BASE_API, PORT } from './config/env';
 
 /* ROUTES */
 import authRouter from './routes/auth.route';
@@ -28,9 +30,9 @@ app.get('/', (_: Request, res: Response) => {
   res.send('Welcome to the Subscription Tracker API!');
 });
 
-app.use(`${BASE_URL}/auth`, authRouter);
-app.use(`${BASE_URL}/users`, userRouter);
-app.use(`${BASE_URL}/subscription`, subscriptionRouter);
+app.use(`${BASE_API}/auth`, authRouter);
+app.use(`${BASE_API}/users`, userRouter);
+app.use(`${BASE_API}/subscriptions`, subscriptionRouter);
 
 app.use((req: Request, _: Response, next: NextFunction) => {
   return next(new ApiError(404, `Route not found: ${req.originalUrl}`));
@@ -38,10 +40,12 @@ app.use((req: Request, _: Response, next: NextFunction) => {
 
 app.use(errorMiddleware);
 
-const StartServer = async () => {
+let server: Http.Server;
+
+const startServer = async () => {
   try {
     await connectDB();
-    app.listen(PORT, () => {
+    server = app.listen(PORT, () => {
       console.info(
         `Subscription Tracker API is running on http://localhost:${PORT}`,
       );
@@ -52,4 +56,24 @@ const StartServer = async () => {
   }
 };
 
-StartServer();
+startServer();
+
+const stopServer = async () => {
+  console.info('\nShutting down server...');
+  try {
+    if (server) {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+      console.info('HTTP server closed.');
+    }
+
+    await Mongoose.disconnect();
+    console.info('Database Disconnected.');
+    process.exit(0);
+  } catch (err: unknown) {
+    console.error('Error during shutdown:', err);
+    process.exit(1);
+  }
+};
+
+process.on('SIGINT', stopServer);
+process.on('SIGTERM', stopServer);

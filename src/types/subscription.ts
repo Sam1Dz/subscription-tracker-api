@@ -25,5 +25,7 @@ export interface ISubscription {
   paymentMethod: string;
   status: SubscriptionStatus;
   renewalDate?: NativeDate;
+  createdAt?: NativeDate;
+  updatedAt?: NativeDate;
 }
 export type ISubscriptionDocument = ISubscription & Document;
